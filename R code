@@ -1,0 +1,693 @@
+---
+title: "FCC Broadband"
+author: "Danequa Forrest/Jeremy Pyne"
+date: "2025-05-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+options(NCores = 12)
+```
+
+```{r}
+# install.packages("readxl")
+
+# Installs pacman ("package manager") if needed
+# if (!require("pacman")) install.packages("pacman")
+# 
+# # Use pacman to load add-on packages as desired
+# pacman::p_load(pacman, psych, rio, tidyverse,
+#                dplyr, GGally, ggplot2, ggthemes,
+#                ggvis, httr, lubridate, plotly, rmarkdown,
+#                shiny, stringr, tidyr, srvyr)
+               
+```
+
+
+```{r load libs}
+library(tidyverse)
+library(tidycensus)
+library(survey)
+library(srvyr)
+library(dplyr)
+library(readxl)
+
+options(scipen=999)
+```
+Data dictionary: https://us-fcc.app.box.com/v/bdc-data-downloads-output
+Data download: https://broadbandmap.fcc.gov/data-download/nationwide-data?version=dec2023
+
+```{r}
+#set working directory
+setwd("/Data/FCC Broadband")
+```
+
+
+```{r}
+path <- "U:/Research/AACIS/_Data Working/US DHHS OMH/"
+
+#load zipcodes that are within the study area
+zcta <- read.csv(paste0(path, 'Neighborhoods/listofzipcodes.csv'))
+zcta <- zcta$gid2
+
+```
+
+
+```{r}
+#download state specific data for cable, copper, fiber and LFW from https://broadbandmap.fcc.gov/home
+
+#read in raw data and filter to just bexar
+Cable_Dec2022 <- read.csv("/Data/FCC Broadband/Cable_fixed_broadband_Dec2022/bdc_48_Cable_fixed_broadband_D22_08may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Copper_Dec2022 <- read.csv("U/Data/FCC Broadband/Copper_fixed_broadband_Dec2022/bdc_48_Copper_fixed_broadband_D22_08may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Fiber_Dec2022 <- read.csv("/Data/FCC Broadband/FibertothePremises_fixed_broadband_Dec2022/bdc_48_FibertothePremises_fixed_broadband_D22_08may2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+LFW_Dec2022 <- read.csv("/Data/FCC Broadband/LicensedFixedWireless_fixed_broadband_Dec2022/bdc_48_LicensedFixedWireless_fixed_broadband_D22_08may2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+
+#Combine all Dec2022 technologies into one table
+Dec2022_bexar <- rbind(Cable_Dec2022, Copper_Dec2022, Fiber_Dec2022, LFW_Dec2022)
+
+#Free up memory space so the rest of the code will run
+
+rm(Cable_Dec2022, Copper_Dec2022, Fiber_Dec2022, LFW_Dec2022)
+
+#read in raw data and filter to just bexar
+Cable_Dec2023 <- read.csv("/Data/FCC Broadband/Cable_fixed_broadband_Dec2023/bdc_48_Cable_fixed_broadband_D23_14may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Copper_Dec2023 <- read.csv("/Data/FCC Broadband/Copper_fixed_broadband_Dec2023/bdc_48_Copper_fixed_broadband_D23_28may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Fiber_Dec2023 <- read.csv("/Data/FCC Broadband/FibertothePremises_fixed_broadband_Dec2023/bdc_48_FibertothePremises_fixed_broadband_D23_28may2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+LFW_Dec2023 <- read.csv("s/Data/FCC Broadband/LicensedFixedWireless_fixed_broadband_Dec2023/bdc_48_LicensedFixedWireless_fixed_broadband_D23_28may2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+
+#Combine all Dec2022 technologies into one table
+Dec2023_bexar <- rbind(Cable_Dec2023, Copper_Dec2023, Fiber_Dec2023, LFW_Dec2023)
+
+#Free up memory space so the rest of the code will run
+
+rm(Cable_Dec2023, Copper_Dec2023, Fiber_Dec2023, LFW_Dec2023)
+
+
+#read in raw data and filter to just bexar
+Cable_June2022 <- read.csv("/Data/FCC Broadband/Cable_fixed_broadband_June2022/bdc_48_Cable_fixed_broadband_J22_10may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Copper_June2022 <- read.csv("/Data/FCC Broadband/Copper_fixed_broadband_June2022/bdc_48_Copper_fixed_broadband_J22_10may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Fiber_June2022 <- read.csv("/Data/FCC Broadband/FibertothePremises_fixed_broadband_June2022/bdc_48_FibertothePremises_fixed_broadband_J22_10may2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+LFW_June2022 <- read.csv("/Data/FCC Broadband/LicensedFixedWireless_fixed_broadband_June2022/bdc_48_LicensedFixedWireless_fixed_broadband_J22_10may2024.csv")%>%
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+#Combine all June2022 technologies into one table
+June2022_bexar <- rbind(Cable_June2022, Copper_June2022, Fiber_June2022, LFW_June2022)
+
+#Free up memory space so the rest of the code will run
+
+rm(Cable_June2022, Copper_June2022, Fiber_June2022, LFW_June2022)
+
+
+#read in raw data and filter to just bexar
+Cable_June2023 <- read.csv("/Data/FCC Broadband/Cable_fixed_broadband_June2023/bdc_48_Cable_fixed_broadband_J23_05may2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Copper_June2023 <- read.csv("/Data/FCC Broadband/Copper_fixed_broadband_June2023/bdc_48_Copper_fixed_broadband_J23_01jun2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Fiber_June2023 <- read.csv("/Data/FCC Broadband/FibertothePremises_fixed_broadband_June2023/bdc_48_FibertothePremises_fixed_broadband_J23_01jun2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+LFW_June2023 <- read.csv("/Data/FCC Broadband/LicensedFixedWireless_fixed_broadband_June2023/bdc_48_LicensedFixedWireless_fixed_broadband_J23_01jun2024.csv")%>%
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+#Combine all June2023 technologies into one table
+June2023_bexar <- rbind(Cable_June2023, Copper_June2023, Fiber_June2023, LFW_June2023)
+
+#Free up memory space so the rest of the code will run
+
+rm(Cable_June2023, Copper_June2023, Fiber_June2023, LFW_June2023)
+
+
+#read in raw data and filter to just bexar
+Cable_June2024 <- read.csv("/Data/FCC Broadband/Cable_fixed_broadband_June2024/bdc_48_Cable_fixed_broadband_J24_25nov2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Copper_June2024 <- read.csv("/Data/FCC Broadband/Copper_fixed_broadband_June2024/bdc_48_Copper_fixed_broadband_J24_25nov2024.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Fiber_June2024 <- read.csv("/Data/FCC Broadband/FibertothePremises_fixed_broadband_June2024/bdc_48_FibertothePremises_fixed_broadband_J24_25nov2024.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+LFW_June2024 <- read.csv("/Data/FCC Broadband/LicensedFixedWireless_fixed_broadband_June2024/bdc_48_LicensedFixedWireless_fixed_broadband_J24_25nov2024.csv")%>%
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+#Combine all June2023 technologies into one table
+June2024_bexar <- rbind(Cable_June2024, Copper_June2024, Fiber_June2024, LFW_June2024)
+
+#Free up memory space so the rest of the code will run
+
+rm(Cable_June2024, Copper_June2024, Fiber_June2024, LFW_June2024)
+```
+
+#newest year of data
+```{r}
+#Dec 2024 Update
+
+#read in raw data and filter to just bexar
+Cable_Dec2024 <- read.csv("/Data/FCC Broadband/Cable_fixed_broadband_Dec2024/bdc_48_Cable_fixed_broadband_D24_12may2025.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Copper_Dec2024 <- read.csv("/Data/FCC Broadband/Copper_fixed_broadband_Dec2024/bdc_48_Copper_fixed_broadband_D24_12may2025.csv") %>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+Fiber_Dec2024 <- read.csv("Data/FCC Broadband/FibertothePremises_fixed_broadband_Dec2024/bdc_48_FibertothePremises_fixed_broadband_D24_12may2025.csv")%>% 
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+LFW_Dec2024 <- read.csv("/Data/FCC Broadband/LicensedFixedWireless_fixed_broadband_Dec2024/bdc_48_LicensedFixedWireless_fixed_broadband_D24_12may2025.csv")%>%
+  filter(substr(block_geoid, 1, 5) == 48029)
+
+#Combine all June2023 technologies into one table
+Dec2024_bexar <- rbind(Cable_Dec2024, Copper_Dec2024, Fiber_Dec2024, LFW_Dec2024)
+
+#Free up memory space so the rest of the code will run
+
+rm(Cable_Dec2024, Copper_Dec2024, Fiber_Dec2024, LFW_Dec2024)
+```
+
+
+
+```{r}
+#Filter to just residential "R". business_residential_code == X, includes properties that are mixed commercial and residential.
+
+Dec2022_bexar <- Dec2022_bexar %>%
+  filter(business_residential_code == "R" | business_residential_code =="X")
+
+Dec2023_bexar <- Dec2023_bexar %>%
+  filter(business_residential_code == "R" | business_residential_code =="X")
+
+June2022_bexar <- June2022_bexar %>%
+  filter(business_residential_code == "R" | business_residential_code =="X")
+
+June2023_bexar <- June2023_bexar %>%
+  filter(business_residential_code == "R" | business_residential_code =="X")
+
+June2024_bexar <- June2024_bexar %>%
+  filter(business_residential_code == "R" | business_residential_code =="X")
+```
+
+#newest year of data
+```{r}
+Dec2024_bexar <- Dec2024_bexar %>%
+  filter(business_residential_code == "R" | business_residential_code =="X")
+```
+
+
+```{r}
+
+#filter to just those that meet the speed requirement of 100/20; run "distinct" so that it only keeps one row for each location_id
+Dec2022_bexar_speed <- Dec2022_bexar %>%
+  filter(max_advertised_download_speed > 99 & max_advertised_upload_speed > 19)%>% 
+  distinct(location_id, .keep_all = TRUE)
+
+Dec2023_bexar_speed <- Dec2023_bexar %>%
+  filter(max_advertised_download_speed > 99 & max_advertised_upload_speed > 19)%>% 
+  distinct(location_id, .keep_all = TRUE)
+
+June2022_bexar_speed <- June2022_bexar %>%
+  filter(max_advertised_download_speed > 99 & max_advertised_upload_speed > 19)%>% 
+  distinct(location_id, .keep_all = TRUE)
+
+June2023_bexar_speed <- June2023_bexar %>%
+  filter(max_advertised_download_speed > 99 & max_advertised_upload_speed > 19)%>% 
+  distinct(location_id, .keep_all = TRUE)
+
+June2024_bexar_speed <- June2024_bexar %>%
+  filter(max_advertised_download_speed > 99 & max_advertised_upload_speed > 19)%>% 
+  distinct(location_id, .keep_all = TRUE)
+
+```
+
+#newest year of data
+```{r}
+Dec2024_bexar_speed <- Dec2024_bexar %>%
+  filter(max_advertised_download_speed > 99 & max_advertised_upload_speed > 19)%>% 
+  distinct(location_id, .keep_all = TRUE)
+```
+
+
+```{r}
+# summarise() by the block_geodid to get numerator counts by block.
+
+numerator_Dec2022 <- Dec2022_bexar_speed %>%
+  group_by(block_geoid) %>% 
+  summarise(locMet_count = n()) %>% 
+  ungroup()
+
+numerator_Dec2023 <- Dec2023_bexar_speed %>%
+  group_by(block_geoid) %>% 
+  summarise(locMet_count = n()) %>% 
+  ungroup()
+
+numerator_June2023 <- June2023_bexar_speed %>%
+  group_by(block_geoid) %>% 
+  summarise(locMet_count = n()) %>% 
+  ungroup()
+
+numerator_June2022 <- June2022_bexar_speed %>%
+  group_by(block_geoid) %>% 
+  summarise(locMet_count = n()) %>% 
+  ungroup()
+
+numerator_June2024 <- June2024_bexar_speed %>%
+  group_by(block_geoid) %>% 
+  summarise(locMet_count = n()) %>% 
+  ungroup()
+```
+
+#newest year of data
+```{r}
+#Dec 2024 update
+# summarise() by the block_geodid to get numerator counts by block.
+
+numerator_Dec2024 <- Dec2024_bexar_speed %>%
+  group_by(block_geoid) %>% 
+  summarise(locMet_count = n()) %>% 
+  ungroup()
+```
+
+```{r}
+# get our denominator, which is total residential locations within each block.
+
+denominator_Dec2022 <- Dec2022_bexar %>% 
+  distinct(location_id, .keep_all = TRUE) %>% 
+  group_by(block_geoid) %>% 
+  summarise(allLoc = n()) %>%
+  ungroup
+
+denominator_Dec2023 <- Dec2023_bexar %>% 
+  distinct(location_id, .keep_all = TRUE) %>% 
+  group_by(block_geoid) %>% 
+  summarise(allLoc = n()) %>%
+  ungroup
+
+denominator_June2022 <- Dec2022_bexar %>%
+  distinct(location_id, .keep_all = TRUE) %>% 
+  group_by(block_geoid) %>% 
+  summarise(allLoc = n()) %>%
+  ungroup
+
+denominator_June2023 <- June2023_bexar %>%
+  distinct(location_id, .keep_all = TRUE) %>% 
+  group_by(block_geoid) %>% 
+  summarise(allLoc = n()) %>%
+  ungroup
+
+denominator_June2024 <- June2024_bexar %>%
+  distinct(location_id, .keep_all = TRUE) %>% 
+  group_by(block_geoid) %>% 
+  summarise(allLoc = n()) %>%
+  ungroup
+```
+
+#newest year of data
+```{r}
+#Dec 2024 Update
+## get our denominator, which is total residential locations within each block.
+
+denominator_Dec2024 <- Dec2024_bexar %>%
+  distinct(location_id, .keep_all = TRUE) %>% 
+  group_by(block_geoid) %>% 
+  summarise(allLoc = n()) %>%
+  ungroup
+```
+
+
+```{r}
+# join the numerator table to the denominator table and calculate the percentage (we needed to change NA to 0's so it would calculate a percentage of 0 in those blocks.
+
+pct_Dec2022 <- left_join(denominator_Dec2022, numerator_Dec2022, by = "block_geoid") %>% 
+    mutate(locMet = case_when(is.na(locMet_count) ~ 0L,
+                              locMet_count > 0 ~ locMet_count)) %>% 
+  mutate(pctMet = locMet/allLoc *100) %>% 
+  select(block_geoid, allLoc, locMet, pctMet)
+
+
+pct_Dec2023 <- left_join(denominator_Dec2023, numerator_Dec2023, by = "block_geoid") %>% 
+    mutate(locMet = case_when(is.na(locMet_count) ~ 0L,
+                              locMet_count > 0 ~ locMet_count)) %>% 
+  mutate(pctMet = locMet/allLoc *100) %>% 
+  select(block_geoid, allLoc, locMet, pctMet)
+
+
+pct_June2022 <- left_join(denominator_June2022, numerator_June2022, by = "block_geoid") %>% 
+    mutate(locMet = case_when(is.na(locMet_count) ~ 0L,
+                              locMet_count > 0 ~ locMet_count)) %>% 
+  mutate(pctMet = locMet/allLoc *100) %>% 
+  select(block_geoid, allLoc, locMet, pctMet)
+
+
+pct_June2023 <- left_join(denominator_June2023, numerator_June2023, by = "block_geoid") %>% 
+    mutate(locMet = case_when(is.na(locMet_count) ~ 0L,
+                              locMet_count > 0 ~ locMet_count)) %>% 
+  mutate(pctMet = locMet/allLoc *100) %>% 
+  select(block_geoid, allLoc, locMet, pctMet)
+
+
+pct_June2024 <- left_join(denominator_June2024, numerator_June2024, by = "block_geoid") %>% 
+    mutate(locMet = case_when(is.na(locMet_count) ~ 0L,
+                              locMet_count > 0 ~ locMet_count)) %>% 
+  mutate(pctMet = locMet/allLoc *100) %>% 
+  select(block_geoid, allLoc, locMet, pctMet)
+
+```
+
+#newest year of data
+```{r}
+#Dec 2024 Update
+# join the numerator table to the denominator table and calculate the percentage (we needed to change NA to 0's so it would calculate a percentage of 0 in those blocks.
+
+pct_Dec2024 <- left_join(denominator_Dec2024, numerator_Dec2024, by = "block_geoid") %>% 
+    mutate(locMet = case_when(is.na(locMet_count) ~ 0L,
+                              locMet_count > 0 ~ locMet_count)) %>% 
+  mutate(pctMet = locMet/allLoc *100) %>% 
+  select(block_geoid, allLoc, locMet, pctMet)
+```
+
+
+```{r}
+#summarise results by tract
+
+pct_tract_Dec2022 <- pct_Dec2022 %>% 
+  mutate(tract_id = as.numeric(substr(block_geoid,1,11))) %>% 
+  group_by(tract_id) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = tract_id, pctMet = locMet/allLoc *100,
+          loc_id = 5, month = "Dec", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_tract_Dec2023 <- pct_Dec2023 %>% 
+  mutate(tract_id = as.numeric(substr(block_geoid,1,11))) %>% 
+  group_by(tract_id) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = tract_id, pctMet = locMet/allLoc *100,
+          loc_id = 5, month = "Dec", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_tract_June2022 <- pct_June2022 %>% 
+  mutate(tract_id = as.numeric(substr(block_geoid,1,11))) %>% 
+  group_by(tract_id) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = tract_id, pctMet = locMet/allLoc *100,
+          loc_id = 5, month = "June", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_tract_June2023 <- pct_June2023 %>% 
+  mutate(tract_id = as.numeric(substr(block_geoid,1,11))) %>% 
+  group_by(tract_id) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = tract_id, pctMet = locMet/allLoc *100,
+          loc_id = 5, month = "June", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_tract_June2024 <- pct_June2024 %>% 
+  mutate(tract_id = as.numeric(substr(block_geoid,1,11))) %>% 
+  group_by(tract_id) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = tract_id, pctMet = locMet/allLoc *100,
+          loc_id = 5, month = "June", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+```
+
+#newest year of data
+```{r}
+#summarise results by tract
+
+pct_tract_Dec2024 <- pct_Dec2024 %>% 
+  mutate(tract_id = as.numeric(substr(block_geoid,1,11))) %>% 
+  group_by(tract_id) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = tract_id, pctMet = locMet/allLoc *100,
+          loc_id = 5, month = "June", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+```
+
+
+```{r}
+#Let's get these values at the county and city level. For the County, we can just add up all the "locations" and "locations met" from the tract level data, as the tract data is already down to the county. For the city, we need to merge the block data into a list of blocks that are only in san Antonio, which is what we will do below.
+
+#read in list of San Antonio block IDs
+SA_Blocks <- read.csv("/Data/FCC Broadband/SanAntonio_BlockIDs.csv")
+
+```
+
+```{r}
+#summarise by city and county
+
+#Now let's merge the block level mbps data (calculated above and called "pct_Dec2022") with the full list of blocks in San Antonio.
+# by county
+pct_bx_Dec2022 <- pct_Dec2022 %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "48029", pctMet = locMet/allLoc *100,
+          loc_id = 1, month = "Dec", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_bx_Dec2023 <- pct_Dec2023 %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "48029", pctMet = locMet/allLoc *100,
+          loc_id = 1, month = "Dec", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_bx_June2022 <- pct_June2022 %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "48029", pctMet = locMet/allLoc *100,
+          loc_id = 1, month = "June", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_bx_June2023 <- pct_June2023 %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "48029", pctMet = locMet/allLoc *100,
+          loc_id = 1, month = "June", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+#by city
+pct_city_Dec2022 <- left_join(SA_Blocks, pct_Dec2022) %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "4865000", pctMet = locMet/allLoc *100,
+          loc_id = 6, month = "Dec", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_city_Dec2023 <- left_join(SA_Blocks, pct_Dec2023) %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "4865000", pctMet = locMet/allLoc *100,
+          loc_id = 6, month = "Dec", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_city_June2022 <- left_join(SA_Blocks, pct_June2022) %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "4865000", pctMet = locMet/allLoc *100,
+          loc_id = 6, month = "June", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_city_June2023 <- left_join(SA_Blocks, pct_June2023) %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "4865000", pctMet = locMet/allLoc *100,
+          loc_id = 6, month = "June", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_bx_June2024 <- pct_June2024 %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "48029", pctMet = locMet/allLoc *100,
+          loc_id = 1, month = "June", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_city_June2024 <- left_join(SA_Blocks, pct_June2024) %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "4865000", pctMet = locMet/allLoc *100,
+          loc_id = 6, month = "June", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+```
+
+#newest year of data
+```{r}
+#Dec 2024 Update
+#Now let's merge the block level mbps data (calculated above and called "pct_June2024") with the full list of blocks in San Antonio.
+#by county
+pct_bx_Dec2024 <- pct_Dec2024 %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "48029", pctMet = locMet/allLoc *100,
+          loc_id = 1, month = "Dec", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+#by city
+pct_city_Dec2024 <- left_join(SA_Blocks, pct_Dec2024) %>% 
+  summarise_at(c("allLoc", "locMet"), sum, na.rm=TRUE) %>% 
+  mutate (GEOID = "4865000", pctMet = locMet/allLoc *100,
+          loc_id = 6, month = "Dec", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+```
+
+
+#by zip codes - not required to replicate the SADC tableau site but leaving this code here if you want to calculate by zips
+
+```{r}
+#this was created using the June2024 Tier E license. you can create or use any block to zip crosswalk for your area
+
+zipblock <- read.csv("/Data/FCC/zipblock_crosswalk2024.csv")
+
+
+pct_zip_June2022 <- pct_June2022 %>% 
+  left_join(zipblock) %>% 
+  group_by(zip) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = zip, pctMet = locMet/allLoc *100,
+          loc_id = 3, month = "June", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_zip_Dec2022 <- pct_Dec2022 %>% 
+  left_join(zipblock) %>% 
+  group_by(zip) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = zip, pctMet = locMet/allLoc *100,
+          loc_id = 3, month = "Dec", year_ = 2022) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_zip_June2023 <- pct_June2023 %>% 
+  left_join(zipblock) %>% 
+  group_by(zip) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = zip, pctMet = locMet/allLoc *100,
+          loc_id = 3, month = "June", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_zip_Dec2023 <- pct_Dec2023 %>% 
+  left_join(zipblock) %>% 
+  group_by(zip) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = zip, pctMet = locMet/allLoc *100,
+          loc_id = 3, month = "Dec", year_ = 2023) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+pct_zip_June2024 <- pct_June2024 %>% 
+  left_join(zipblock) %>% 
+  group_by(zip) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = zip, pctMet = locMet/allLoc *100,
+          loc_id = 3, month = "June", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+```
+
+#newest year of data
+
+```{r}
+pct_zip_Dec2024 <- pct_Dec2024 %>% 
+  left_join(zipblock) %>% 
+  group_by(zip) %>% 
+  summarise(across(c(locMet, allLoc), sum, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  mutate (GEOID = zip, pctMet = locMet/allLoc *100,
+          loc_id = 3, month = "Dec", year_ = 2024) %>% 
+  select(GEOID, allLoc, locMet, pctMet, loc_id, month, year_)
+
+```
+
+
+```{r}
+#output into one table
+
+FCCtoOMH <- rbind(
+  pct_bx_June2022, pct_city_June2022, pct_tract_June2022, pct_zip_June2022,
+  
+  pct_bx_Dec2022, pct_city_Dec2022, pct_tract_Dec2022, pct_zip_Dec2022,
+  
+  pct_bx_June2023, pct_city_June2023, pct_tract_June2023, pct_zip_June2023, 
+  
+  pct_bx_Dec2023, pct_city_Dec2023, pct_tract_Dec2023, pct_zip_Dec2023,
+  
+  pct_bx_June2024, pct_city_June2024, pct_tract_June2024, pct_zip_June2024,
+
+  pct_bx_Dec2024, pct_city_Dec2024, pct_tract_June2024, pct_zip_Dec2024
+  )
+
+```
+
+
+#format for tableau
+```{r}
+FCCtoTblu <- FCCtoOMH %>%
+  filter(loc_id %in% c(1,5,6)) %>% 
+  mutate(
+    Year = year_,
+    Month = case_when(month == "June" ~ 6,
+                      month == "Dec" ~ 12),
+    `Measurement Date` = case_when(month == "June" ~ paste("6/1/",Year, sep=""),
+                                   month == "Dec" ~ paste("12/1/",Year, sep="")),
+    `Measurement Date` = as.Date(`Measurement Date`, format = "%m/%d/%Y"),
+    tract_id = GEOID,
+    `Tract Name` = as.numeric(paste(substring(tract_id,6,9), ".", substring(tract_id,10,11), sep="")),
+    `total units` = allLoc,
+    `units with access` = locMet,
+    `pct with access` = pctMet
+    )
+
+FCCtoTblu_tract <- FCCtoTblu %>% 
+  filter(loc_id == 5) %>% 
+  select("Year":"pct with access")
+
+FCCtoTblu_cntcty <- FCCtoTblu %>% 
+  filter(loc_id %in% c(1,6)) %>% 
+  mutate(Geography = case_when(GEOID == 48029 ~ "Bexar County",
+                         GEOID == 4865000 ~ "San Antonio")) %>% 
+  select("Year", "Measurement Date", "Geography", "pctMet")
+
+```
+
+
+#write csv for Tableau updates
+
+```{r}
+library(openxlsx)
+
+xl_list <- list("FCC-Pct Units Bb Access Tract" = FCCtoTblu_tract, "FCC HS BB Trend" = FCCtoTblu_cntcty)
+
+write.xlsx(xl_list, file = "Tableau FCC Data Updates 2022 to 2024.xlsx", overwrite = T)
+
+
+```
+
+
+
+
+
+
